@@ -5,6 +5,7 @@ CREATE TABLE rangers(
     name varchar(255),
     region varchar(255)
 );
+
 ALTER TABLE rangers ADD CONSTRAINT rangers_pk PRIMARY KEY (ranger_id);
 ALTER TABLE rangers ALTER COLUMN name SET NOT NULL;
 ALTER TABLE rangers ALTER COLUMN region SET NOT NULL;
@@ -22,7 +23,6 @@ ALTER TABLE species ALTER COLUMN common_name SET NOT NULL ;
 ALTER TABLE species ALTER COLUMN scientific_name SET NOT NULL ;
 ALTER TABLE species ALTER COLUMN discovery_date SET NOT NULL;
 ALTER TABLE species ALTER COLUMN conservation_status SET NOT NULL;
-ALTER TABLE species ADD CONSTRAINT conservation_status CHECK (conservation_status in ('Endangered','Vulnerable','Historic'));
 
 CREATE TABLE sightings(
     sighting_id serial,
@@ -59,12 +59,6 @@ INSERT INTO sightings (species_id,ranger_id, location,sighting_time,notes) VALUE
 (3,3,'Bamboo Grove East', '2024-05-15 09:10:00', 'Feeding observed'),
 (1,2,'Snowfall Pass', '2024-05-18 18:30:00',NULL) ;
 
-SELECT * FROM rangers;
-SELECT * FROM species;
-SELECT * FROM sightings;
-
-DROP TABLE sightings;
-DROP DATABASE conservation_db;
 
 -- 1. Register a new ranger with provided data with name = 'Derek Fox' and region = 'Coastal Plains'
 INSERT INTO rangers (name, region) VALUES ('Derek Fox','Coastal Plains');
@@ -118,4 +112,4 @@ $$
 $$;
 
 call delete_ranger_never_sighted_species();
-select * from rangers;
+
