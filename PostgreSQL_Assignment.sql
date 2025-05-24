@@ -1,0 +1,96 @@
+CREATE DATABASE conservation_db;
+
+CREATE TABLE rangers(
+    ranger_id serial,
+    name varchar(255),
+    region varchar(255)
+);
+ALTER TABLE rangers ADD CONSTRAINT rangers_pk PRIMARY KEY (ranger_id);
+ALTER TABLE rangers ALTER COLUMN name SET NOT NULL;
+ALTER TABLE rangers ALTER COLUMN region SET NOT NULL;
+
+CREATE TABLE species(
+    species_id serial,
+    common_name varchar(255),
+    scientific_name varchar(255),
+    discovery_date timestamp,
+    conservation_status varchar(255)
+);
+
+ALTER TABLE species ADD CONSTRAINT species_pk PRIMARY KEY (species_id);
+ALTER TABLE species ALTER COLUMN common_name SET NOT NULL ;
+ALTER TABLE species ALTER COLUMN scientific_name SET NOT NULL ;
+ALTER TABLE species ALTER COLUMN discovery_date SET NOT NULL;
+ALTER TABLE species ALTER COLUMN conservation_status SET NOT NULL;
+ALTER TABLE species ADD CONSTRAINT conservation_status CHECK (conservation_status in ('Endangered','Vulnerable','Historic'));
+
+CREATE TABLE sightings(
+    sighting_id serial,
+    ranger_id int,
+    species_id int,
+    sighting_time timestamp,
+    location varchar(255),
+    notes varchar(255)
+);
+
+
+ALTER TABLE sightings ADD CONSTRAINT sightings_pk PRIMARY KEY (sighting_id);
+ALTER TABLE sightings ADD CONSTRAINT sightings_fk_1 FOREIGN KEY (ranger_id) REFERENCES rangers(ranger_id) ON DELETE CASCADE ;
+ALTER TABLE sightings ADD CONSTRAINT sightings_fk_2 FOREIGN KEY (species_id) REFERENCES species(species_id) ON DELETE CASCADE ;
+ALTER TABLE sightings ALTER COLUMN ranger_id SET NOT NULL;
+ALTER TABLE sightings ALTER COLUMN species_id SET NOT NULL;
+ALTER TABLE sightings ALTER COLUMN sighting_time SET NOT NULL;
+ALTER TABLE sightings ALTER COLUMN location SET NOT NULL;
+
+
+INSERT INTO rangers (name, region) values ('Alice Green', 'Northern Hills'),
+                                          ( 'Bob White ','River Delta'),
+                                          ('Carol King','Mountain Range');
+
+INSERT INTO species (common_name, scientific_name, discovery_date, conservation_status) VALUES
+(' Snow Leopard      ',' Panthera uncia          ',' 1775-01-01     ','Endangered'),
+(' Bengal Tiger      ',' Panthera tigris tigris  ',' 1758-01-01     ','Endangered'),
+(' Red Panda         ',' Ailurus fulgens         ',' 1825-01-01     ','Vulnerable'),
+(' Asiatic Elephant  ',' Elephas maximus indicus ',' 1758-01-01     ','Endangered');
+
+INSERT INTO sightings (species_id,ranger_id, location,sighting_time,notes) VALUES
+(1,1,'Peak Ridge','2024-05-10 07:45:00','Camera trap image captured'),
+(2,2,'Bankwood Area', '2024-05-12 16:20:00', 'Juvenile seen'),
+(3,3,'Bamboo Grove East', '2024-05-15 09:10:00', 'Feeding observed'),
+(1,2,'Snowfall Pass', '2024-05-18 18:30:00',NULL) ;
+
+SELECT * FROM rangers;
+SELECT * FROM species;
+SELECT * FROM sightings;
+
+DROP TABLE sightings;
+DROP DATABASE conservation_db;
+
+-- 1. Register a new ranger with provided data with name = 'Derek Fox' and region = 'Coastal Plains'
+INSERT INTO rangers (name, region) VALUES ('Derek Fox','Coastal Plains');
+
+-- 2. Count unique species ever sighted.
+SELECT COUNT(DISTINCT(species_id)) FROM sightings;
+
+-- 3. Find all sightings where the location includes "Pass".
+SELECT * FROM sightings WHERE location ilike '%Pass%';
+
+-- 4. List each ranger's name and their total number of sightings.
+
+SELECT r.name,tmp.cnt as  total_sightings FROM rangers as r JOIN
+    (SELECT s.ranger_id,count(s.ranger_id) as cnt FROM sightings as s GROUP BY s.ranger_id) as tmp on r.ranger_id=tmp.ranger_id;
+
+-- 5. List species that have never been sighted.
+with tmp as (select * from species left join sightings on species.species_id = sightings.species_id )
+select tmp.common_name from tmp where tmp.sighting_id is null;
+
+-- 6. Show the most recent 2 sightings.
+select sp.common_name,si.sighting_time,r.name from sightings as si,species as sp,rangers as r
+                                              where r.ranger_id=si.ranger_id and sp.species_id=si.species_id
+                                                         order by si.sighting_time desc limit 2;
+
+
+-- 7. Update all species discovered before year 1800 to have status 'Historic'.
+
+UPDATE species SET conservation_status='Historic' WHERE extract(year from discovery_date)<1800;
+
