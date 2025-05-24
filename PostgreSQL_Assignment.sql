@@ -116,4 +116,3 @@ call delete_ranger_never_sighted_species();
 
 
 
-select * from species;
