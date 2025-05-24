@@ -94,3 +94,28 @@ select sp.common_name,si.sighting_time,r.name from sightings as si,species as sp
 
 UPDATE species SET conservation_status='Historic' WHERE extract(year from discovery_date)<1800;
 
+
+-- 8.Label each sighting's time of day as 'Morning', 'Afternoon', or 'Evening'.
+
+select sighting_id,case
+    when extract(hour from sighting_time)<12 then 'Morning'
+    WHEN extract(hour from sighting_time)>=12 and extract(hour from sighting_time)<=17 then 'Afternoon'
+    ELSE 'Evening'
+end as time_of_day from sightings;
+
+-- 9.Delete rangers who have never sighted any species
+
+create or replace procedure delete_ranger_never_sighted_species()
+language plpgsql
+as
+$$
+    declare tmp int;
+    begin
+    with t1 as (select rangers.ranger_id,sightings.sighting_id from rangers left join sightings on rangers.ranger_id=sightings.ranger_id)
+    select t1.ranger_id into tmp from t1 where t1.sighting_id is null;
+    delete from rangers where ranger_id=tmp;
+    end
+$$;
+
+call delete_ranger_never_sighted_species();
+select * from rangers;
